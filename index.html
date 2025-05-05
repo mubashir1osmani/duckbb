@@ -2,13 +2,132 @@
 <html>
 <head>
     <title>Duck Hoops NYC</title>
-    <style>body { margin: 0; overflow: hidden; }</style>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f0f0;
+            height: 100vh;
+            text-align: center;
+        }
+        #homepage {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(40, 40, 40, 0.9); /* Darker semi-transparent overlay */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            transition: opacity 0.5s ease-out;
+        }
+        #homepage.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        h1 {
+            color: #fff;
+            font-size: 3em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        p {
+            color: #fff;
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            max-width: 600px;
+        }
+        #start-button {
+            padding: 15px 30px;
+            font-size: 1.2em;
+            color: white;
+            background-color: #ff8c00;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        #start-button:hover {
+            background-color: #e07b00;
+            transform: scale(1.05);
+        }
+        #game-container {
+            width: 100%;
+            height: 100vh;
+        }
+        /* Loading indicator */
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 1.5em;
+            z-index: 20;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+    </style>
 </head>
 <body>
+    <div id="homepage">
+        <h1>🦆 Duck Hoops NYC 🏀</h1>
+        <p>The quackiest streetball game on the web! Team up with fellow ducks and dominate the court in the heart of New York City.</p>
+        <button id="start-button">Start Game</button>
+    </div>
+
+    <div id="loading" class="loading">Loading game assets...</div>
+    <div id="game-container"></div>
+
+    <!-- Load libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.min.js"></script>
-    <script src="tween.min.js"></script>
-    <script src="https://unpkg.com/tween.js@18.6.4/dist/tween.min.js"></script>
+
+    <!-- Load your game code - removed type="module" -->
     <script src="game.js"></script>
+
+    <script>
+        // Start game when button is clicked
+        document.getElementById('start-button').addEventListener('click', function() {
+            // Show loading message
+            document.getElementById('loading').style.display = 'block';
+            
+            // Hide homepage
+            document.getElementById('homepage').classList.add('hidden');
+
+            // Short timeout to ensure animations run smoothly
+            setTimeout(function() {
+                // Debug output to help diagnose issues
+                console.log("Checking for game instance...");
+                console.log("window.gameInstance:", window.gameInstance);
+                
+                try {
+                    // Check if the gameInstance exists
+                    if (window.gameInstance) {
+                        console.log("Found game instance:", window.gameInstance);
+                        window.gameInstance.startGame();
+                        console.log("Game started successfully");
+                        
+                        // Hide loading once game starts
+                        setTimeout(function() {
+                            document.getElementById('loading').style.display = 'none';
+                        }, 500);
+                    } else {
+                        console.error("Game instance not found!");
+                        alert("Error starting game. Please refresh the page and try again.");
+                    }
+                } catch (error) {
+                    console.error("Error starting game:", error);
+                    alert("Error starting game: " + error.message);
+                }
+            }, 300);
+        });
+    </script>
 </body>
 </html>
