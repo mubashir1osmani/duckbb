@@ -67,6 +67,303 @@ let basketballBody = null;
 let hoopPosition = new THREE.Vector3(0, 2, -10);
 let playerSide = 'home'; // 'home' or 'away' to track which side player is on
 
+// NYX environment elements
+let skybox;
+let clouds = [];
+let buildings = [];
+let cars = [];
+
+// Create NYC environment
+function createNYCEnvironment() {
+    createSkybox();
+    createClouds();
+    createBuildings();
+    createCars();
+}
+
+// Create skybox with NYC sky color
+function createSkybox() {
+    // Create subtle gradient sky effect
+    const topColor = new THREE.Color(0x72A6DB); // Light blue at top
+    const bottomColor = new THREE.Color(0xD6E6F3); // Lighter blue/white at horizon
+    
+    scene.background = new THREE.Color(0x72A6DB);
+    scene.fog = new THREE.Fog(bottomColor, 25, 80); // Add distance fog
+    
+    // Add a directional light to simulate sunlight
+    const sunLight = new THREE.DirectionalLight(0xfffacc, 1);
+    sunLight.position.set(5, 15, 8);
+    sunLight.castShadow = true;
+    
+    // Improve shadow quality
+    sunLight.shadow.mapSize.width = 2048;
+    sunLight.shadow.mapSize.height = 2048;
+    sunLight.shadow.camera.near = 0.5;
+    sunLight.shadow.camera.far = 50;
+    sunLight.shadow.camera.left = -20;
+    sunLight.shadow.camera.right = 20;
+    sunLight.shadow.camera.top = 20;
+    sunLight.shadow.camera.bottom = -20;
+    
+    scene.add(sunLight);
+}
+
+// Create clouds
+function createClouds() {
+    // Create cloud group
+    const cloudGroup = new THREE.Group();
+    scene.add(cloudGroup);
+    
+    // Function to create a single cloud
+    function createCloud(x, y, z, scale) {
+        const cloudGeometry = new THREE.SphereGeometry(1, 8, 8);
+        const cloudMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xffffff,
+            roughness: 0.9,
+            metalness: 0.1,
+            flatShading: true
+        });
+        
+        // Create a group of spheres to form a cloud
+        const cloud = new THREE.Group();
+        
+        // Create multiple spheres for a puffy look
+        const numPuffs = 5 + Math.floor(Math.random() * 5);
+        for (let i = 0; i < numPuffs; i++) {
+            const puff = new THREE.Mesh(cloudGeometry, cloudMaterial);
+            puff.position.set(
+                (Math.random() - 0.5) * 2,
+                (Math.random() - 0.5) * 0.8,
+                (Math.random() - 0.5) * 2
+            );
+            puff.scale.set(
+                Math.random() * 0.8 + 0.6,
+                Math.random() * 0.5 + 0.5,
+                Math.random() * 0.8 + 0.6
+            );
+            cloud.add(puff);
+        }
+        
+        cloud.position.set(x, y, z);
+        cloud.scale.set(scale, scale * 0.6, scale);
+        
+        cloudGroup.add(cloud);
+        clouds.push({
+            mesh: cloud,
+            speed: Math.random() * 0.02 + 0.01,
+            direction: new THREE.Vector3(1, 0, 0)
+        });
+    }
+    
+    // Create multiple clouds
+    for (let i = 0; i < 10; i++) {
+        const x = (Math.random() - 0.5) * 100;
+        const y = 20 + Math.random() * 15;
+        const z = (Math.random() - 0.5) * 100;
+        const scale = Math.random() * 3 + 3;
+        
+        createCloud(x, y, z, scale);
+    }
+}
+
+// Create NYC skyline buildings
+function createBuildings() {
+    // Create buildings along the perimeter
+    const buildingGroup = new THREE.Group();
+    scene.add(buildingGroup);
+    
+    // Create building materials
+    const buildingMaterials = [
+        new THREE.MeshStandardMaterial({ color: 0x8C8C8C, roughness: 0.8, metalness: 0.2 }), // Concrete
+        new THREE.MeshStandardMaterial({ color: 0x4D4D4D, roughness: 0.7, metalness: 0.3 }), // Dark concrete
+        new THREE.MeshStandardMaterial({ color: 0x777777, roughness: 0.6, metalness: 0.4 }), // Medium grey
+        new THREE.MeshStandardMaterial({ color: 0x505355, roughness: 0.6, metalness: 0.6 }) // Metallic
+    ];
+    
+    // Glass material
+    const glassMaterial = new THREE.MeshStandardMaterial({
+        color: 0x6a9bd5,
+        roughness: 0.1,
+        metalness: 0.8,
+        transparent: true,
+        opacity: 0.7
+    });
+    
+    // Function to create a building
+    function createBuilding(x, z, width, depth, height) {
+        // Main building
+        const buildingGeometry = new THREE.BoxGeometry(width, height, depth);
+        const buildingMaterial = buildingMaterials[Math.floor(Math.random() * buildingMaterials.length)];
+        const building = new THREE.Mesh(buildingGeometry, buildingMaterial);
+        
+        // Add windows as a second material
+        const windowsGeometry = new THREE.BoxGeometry(width * 0.98, height * 0.98, depth * 0.98);
+        const windowsMaterial = glassMaterial;
+        const windows = new THREE.Mesh(windowsGeometry, windowsMaterial);
+        
+        // Position building
+        building.position.set(x, height/2 - 0.5, z); // Adjust y position so buildings sit on ground
+        windows.position.set(0, 0, 0);
+        
+        // Add windows to building
+        building.add(windows);
+        buildingGroup.add(building);
+        buildings.push(building);
+    }
+    
+    // Create buildings around the perimeter
+    const courtSize = 25; // Assuming court is roughly this size
+    const buildingDistance = 30; // Closer to court (was 35)
+    const numBuildings = 40;
+    
+    for (let i = 0; i < numBuildings; i++) {
+        // Calculate position around perimeter
+        const angle = (i / numBuildings) * Math.PI * 2;
+        const distance = buildingDistance + Math.random() * 10;
+        const x = Math.sin(angle) * distance;
+        const z = Math.cos(angle) * distance;
+        
+        // Random building dimensions - make them taller
+        const width = 5 + Math.random() * 10;
+        const depth = 5 + Math.random() * 10;
+        const height = 25 + Math.random() * 60; // Much taller buildings (was 15 + random * 40)
+        
+        createBuilding(x, z, width, depth, height);
+    }
+    
+    // Add some iconic buildings - make them even taller
+    createBuilding(-30, -40, 8, 8, 90); // Empire State-like (was 60)
+    createBuilding(35, -35, 10, 10, 80); // Another skyscraper (was 50)
+    createBuilding(-20, 40, 15, 15, 70); // Wide office building (was 40)
+    
+    // Add One World Trade Center style building
+    createBuilding(40, 40, 12, 12, 110); // Very tall building with square base
+}
+
+// Create cars that move along streets
+function createCars() {
+    const carGroup = new THREE.Group();
+    scene.add(carGroup);
+    
+    // Car colors
+    const carColors = [
+        0xF6D236, // Yellow (taxi)
+        0xE62E2E, // Red
+        0x2E70E6, // Blue
+        0x2EE675, // Green
+        0xFFFFFF, // White
+        0x000000  // Black
+    ];
+    
+    // Function to create a car
+    function createCar(x, z, color, direction) {
+        // Car body
+        const bodyGeometry = new THREE.BoxGeometry(2, 0.75, 4);
+        const bodyMaterial = new THREE.MeshStandardMaterial({ color: color, roughness: 0.5 });
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        
+        // Car top
+        const topGeometry = new THREE.BoxGeometry(1.8, 0.5, 2);
+        const topMaterial = new THREE.MeshStandardMaterial({ color: color, roughness: 0.5 });
+        const top = new THREE.Mesh(topGeometry, topMaterial);
+        top.position.set(0, 0.625, -0.5);
+        body.add(top);
+        
+        // Car wheels
+        const wheelGeometry = new THREE.CylinderGeometry(0.4, 0.4, 0.3, 16);
+        const wheelMaterial = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 1 });
+        
+        // Add wheels at each corner
+        const wheelPositions = [
+            [-0.9, -0.3, 1.2],
+            [0.9, -0.3, 1.2],
+            [-0.9, -0.3, -1.2],
+            [0.9, -0.3, -1.2]
+        ];
+        
+        wheelPositions.forEach(pos => {
+            const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            wheel.rotation.z = Math.PI / 2;
+            wheel.position.set(pos[0], pos[1], pos[2]);
+            body.add(wheel);
+        });
+        
+        // Create headlights and taillights
+        const lightGeometry = new THREE.SphereGeometry(0.2, 8, 8);
+        const headlightMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xFFFFCC,
+            emissive: 0xFFFFCC,
+            emissiveIntensity: 0.5
+        });
+        
+        const taillightMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xFF0000,
+            emissive: 0xFF0000,
+            emissiveIntensity: 0.5
+        });
+        
+        // Add headlights
+        const headlight1 = new THREE.Mesh(lightGeometry, headlightMaterial);
+        const headlight2 = new THREE.Mesh(lightGeometry, headlightMaterial);
+        headlight1.position.set(-0.6, 0, 2);
+        headlight2.position.set(0.6, 0, 2);
+        headlight1.scale.set(0.5, 0.5, 0.1);
+        headlight2.scale.set(0.5, 0.5, 0.1);
+        body.add(headlight1);
+        body.add(headlight2);
+        
+        // Add taillights
+        const taillight1 = new THREE.Mesh(lightGeometry, taillightMaterial);
+        const taillight2 = new THREE.Mesh(lightGeometry, taillightMaterial);
+        taillight1.position.set(-0.6, 0, -2);
+        taillight2.position.set(0.6, 0, -2);
+        taillight1.scale.set(0.5, 0.5, 0.1);
+        taillight2.scale.set(0.5, 0.5, 0.1);
+        body.add(taillight1);
+        body.add(taillight2);
+        
+        // Position car
+        body.position.set(x, 0, z);
+        
+        // Rotate car based on direction (angle in radians)
+        body.rotation.y = direction;
+        
+        carGroup.add(body);
+        cars.push({
+            mesh: body,
+            speed: 0.1 + Math.random() * 0.1,
+            startX: x,
+            startZ: z,
+            maxDistance: 100 + Math.random() * 50,
+            direction: direction,
+            distanceMoved: 0
+        });
+    }
+    
+    // Create "streets" of cars
+    const numCars = 15;
+    
+    // East-West Street (Z axis)
+    for (let i = 0; i < numCars/3; i++) {
+        const x = -40 + Math.random() * 30; // Left side of court
+        const z = 30 + i * 10 + Math.random() * 5;
+        createCar(x, z, carColors[Math.floor(Math.random() * carColors.length)], 0);
+    }
+    
+    for (let i = 0; i < numCars/3; i++) {
+        const x = 40 - Math.random() * 30; // Right side of court
+        const z = -30 - i * 10 - Math.random() * 5;
+        createCar(x, z, carColors[Math.floor(Math.random() * carColors.length)], Math.PI);
+    }
+    
+    // North-South Street (X axis)
+    for (let i = 0; i < numCars/3; i++) {
+        const x = 30 + i * 10 + Math.random() * 5;
+        const z = -40 + Math.random() * 30;
+        createCar(x, z, carColors[Math.floor(Math.random() * carColors.length)], Math.PI / 2);
+    }
+}
+
 function initPhysics() {
     // Physics world setup
     const collisionConfiguration = new Ammo.btDefaultCollisionConfiguration();
@@ -149,7 +446,7 @@ function loadModels() {
         // called when the resource is loaded
         function (gltf) {
             basketballObj = gltf.scene;
-            basketballObj.position.set(0, 5, 0); // Start the ball in the air
+            basketballObj.position.set(0, 1.5, 0); // Lower starting position (was 5)
             basketballObj.scale.set(0.1, 0.1, 0.1); // Scale down the basketball
             scene.add(basketballObj);
             console.log('Basketball model loaded successfully');
@@ -158,7 +455,7 @@ function loadModels() {
             const ballShape = new Ammo.btSphereShape(0.1); // Radius of the basketball
             const ballTransform = new Ammo.btTransform();
             ballTransform.setIdentity();
-            ballTransform.setOrigin(new Ammo.btVector3(0, 5, 0));
+            ballTransform.setOrigin(new Ammo.btVector3(0, 1.5, 0)); // Match the new position
             const ballMass = 0.6; // Lighter ball for better bounces
             const localInertia = new Ammo.btVector3(0, 0, 0);
             ballShape.calculateLocalInertia(ballMass, localInertia);
@@ -275,6 +572,62 @@ function animate() {
             }
         }
     }
+    
+    // Animate clouds
+    clouds.forEach(cloud => {
+        cloud.mesh.position.x += cloud.speed * cloud.direction.x;
+        
+        // Reset cloud position if it goes too far
+        if (cloud.mesh.position.x > 100) {
+            cloud.mesh.position.x = -100;
+        }
+    });
+    
+    // Animate cars
+    cars.forEach(car => {
+        // Move the car based on its direction and speed
+        if (car.direction === 0) { // East direction
+            car.mesh.position.x += car.speed;
+            car.distanceMoved += car.speed;
+            
+            // Turn around if gone too far
+            if (car.distanceMoved > car.maxDistance) {
+                car.mesh.rotation.y = Math.PI;
+                car.direction = Math.PI;
+                car.distanceMoved = 0;
+            }
+        } else if (car.direction === Math.PI) { // West direction
+            car.mesh.position.x -= car.speed;
+            car.distanceMoved += car.speed;
+            
+            // Turn around if gone too far
+            if (car.distanceMoved > car.maxDistance) {
+                car.mesh.rotation.y = 0;
+                car.direction = 0;
+                car.distanceMoved = 0;
+            }
+        } else if (car.direction === Math.PI / 2) { // North direction
+            car.mesh.position.z += car.speed;
+            car.distanceMoved += car.speed;
+            
+            // Turn around if gone too far
+            if (car.distanceMoved > car.maxDistance) {
+                car.mesh.rotation.y = -Math.PI / 2;
+                car.direction = -Math.PI / 2;
+                car.distanceMoved = 0;
+            }
+        } else if (car.direction === -Math.PI / 2) { // South direction
+            car.mesh.position.z -= car.speed;
+            car.distanceMoved += car.speed;
+            
+            // Turn around if gone too far
+            if (car.distanceMoved > car.maxDistance) {
+                car.mesh.rotation.y = Math.PI / 2;
+                car.direction = Math.PI / 2;
+                car.distanceMoved = 0;
+            }
+        }
+    });
 
     // Update duck position based on keys pressed
     if (duckModel && basketballObj) {
@@ -423,6 +776,8 @@ function startGame() {
         script.onerror = () => {
             console.error('Failed to load Ammo.js dynamically');
             // Continue without physics
+            console.log('Creating NYC environment without physics...');
+            createNYCEnvironment();
             loadModels();
             animate();
         };
@@ -441,18 +796,25 @@ function initAmmo() {
             Ammo = AmmoLib;
             initPhysics();
             console.log('Physics initialized');
+            // Create NYC environment BEFORE loading models to ensure it's visible
+            console.log('Creating NYC environment...');
+            createNYCEnvironment();
             loadModels();
             console.log('Started loading models');
             animate(); // Start animation loop after physics and models are loaded
         }).catch(function(error) {
             console.error('Failed to load Ammo.js:', error);
             // Continue without physics
+            console.log('Creating NYC environment without physics...');
+            createNYCEnvironment();
             loadModels();
             animate();
         });
     } catch (e) {
         console.error('Error initializing Ammo.js:', e);
         // Continue without physics
+        console.log('Creating NYC environment without physics due to error...');
+        createNYCEnvironment();
         loadModels();
         animate();
     }
