@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2016", // Or a later version if needed
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "allowJs": true, // Allow JavaScript files to be included
+    "checkJs": false, // Don't type-check JS files by default
+    "outDir": "./dist", // Specify an output directory (optional but good practice)
+    "rootDir": "./", // Specify the root directory
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": [
+    "main.js" // Explicitly include main.js
+  ],
+  "exclude": [
+    "node_modules" // Exclude node_modules if it were present
+  ]
+}

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Duckball</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Fix: Load Ammo.js with error handling -->
+    <script>
+        // Add global error handling
+        window.addEventListener('error', function(event) {
+            console.error('Global error caught:', event.error);
+        });
+        
+        // Make sure Ammo is available
+        window.AmmoLoaded = false;
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/ammo.js@0.2.0/ammo.min.js"></script>
+</head>
+<body>
+    <div id="welcome-page">
+        <h1>Duckball</h1>
+        <input type="text" id="playerName" placeholder="Enter your name">
+        <button id="startButton">Start Game</button>
+    </div>
+    
+    <div id="controls-ui">
+        <h3>Controls</h3>
+        <p>WASD / Arrow Keys: Move</p>
+        <p>Space: Jump</p>
+        <p>E: Shoot Ball</p>
+        <p>Get close to ball to pick it up</p>
+    </div>
+    
+    <script type="module" src="main.js"></script>
+</body>
+</html>
